@@ -1,4 +1,4 @@
-from backend.app.ml.prototypes_store import PROTOTYPES
+# backend/app/main.py
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,8 +8,8 @@ import numpy as np
 from app.pipeline.raman_preprocess import load_spectrum_csv, preprocess_spectrum
 from app.utils.plots import spectrum_plot_base64
 from app.ml.features import extract_raman_features
-from backend.app.ml.prototypes import predict_with_prototypes  # ✅ correct import
-
+from app.ml.prototypes_store import PROTOTYPES
+from app.ml.prototypes import predict_with_prototypes
 
 # ---------------- logging ----------------
 logging.basicConfig(level=logging.INFO)
@@ -67,13 +67,13 @@ async def analyze(
 
         processed = preprocess_spectrum(df)
 
-        # ---- Step 4.2: extract features ----
+        # ---- features ----
         features = extract_raman_features(
             processed["x"],
             processed["y_processed"]
         )
 
-        # ---- Step 4.3: prototypes scoring ----
+        # ---- prototypes scoring ----
         label = None
         prototype_score = None
         all_scores = None
@@ -81,31 +81,41 @@ async def analyze(
         if PROTOTYPES:
             label, prototype_score, all_scores = predict_with_prototypes(features, PROTOTYPES)
 
-        # ---- generate plot ----
+        # ---- plot ----
         plot_b64 = spectrum_plot_base64(
             processed["x"],
             processed["y_raw"],
             processed["y_processed"]
         )
 
-        # ---- deterministic confidence stub (NOT ML yet) ----
-        y = processed["y_processed"]
-        snr_like = float(np.std(y) / (np.mean(np.abs(np.diff(y))) + 1e-9))
-        confidence = max(0.50, min(0.95, 0.50 + 0.10 * (snr_like / 10.0)))
+        # ---- confidence ----
+        # If prototype_score exists (cosine sim ~ [-1, 1]), map it to [0.5, 0.95]
+        if prototype_score is not None:
+            # map [-1, 1] -> [0, 1]
+            conf01 = (float(prototype_score) + 1.0) / 2.0
+            confidence = max(0.50, min(0.95, conf01))
+        else:
+            # fallback if prototypes not loaded
+            y = processed["y_processed"]
+            snr_like = float(np.std(y) / (np.mean(np.abs(np.diff(y))) + 1e-9))
+            confidence = max(0.50, min(0.95, 0.50 + 0.10 * (snr_like / 10.0)))
 
-        # ✅ Response: includes 4.3 fields + keeps your old keys
         return {
             "status": "success",
-            "prediction": "normal",     # placeholder until ML is added
-            "confidence": round(confidence, 3),
 
+            # keep this as a placeholder until you map labels -> real classes
+            "prediction": "normal",
+
+            "confidence": round(float(confidence), 3),
             "spectrum_plot_png_base64": plot_b64,
 
-            # ✅ Step 4.3 debug + wiring
+            # prototype-based output
             "feature_dim": int(features.shape[0]),
-            "label": label,  # None if prototypes not loaded yet
-            "prototype_score": prototype_score,  # cosine similarity [-1, 1]
-            "all_scores": all_scores,  # remove later if you want
+            "label": label,  # None if prototypes not loaded
+            "prototype_score": None if prototype_score is None else round(float(prototype_score), 6),
+
+            # debug (remove later if you want)
+            "all_scores": all_scores,
 
             "received": {
                 "spectrum_filename": spectrum.filename,
@@ -120,3 +130,4 @@ async def analyze(
     except Exception as e:
         logger.exception("Unexpected server error")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
