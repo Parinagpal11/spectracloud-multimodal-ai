@@ -1,20 +1,42 @@
+'EOF'
 # OS
 .DS_Store
+.localized
 
 # Python
-.venv/
-__pycache__/
+backend/.venv/
+**/__pycache__/
 *.pyc
 
-# Node
+# Next / Node
 frontend/node_modules/
+frontend/.next/
+*.log
 
-# Data / artifacts
+# Data / big files
+*.csv
 backend/app/data/
 backend/app/ml/prototypes.json
 
-# Random local files
+EOF
+
+
+# mac
+.DS_Store
+.localized
+
+# python
+backend/.venv/
+**/__pycache__/
+*.pyc
+
+# next/node
+frontend/node_modules/
+frontend/.next/
+*.log
+
+# data + big files
 *.csv
-*.pdf
-*.png
-*.jpg
+backend/app/data/
+backend/app/ml/prototypes.json
+
