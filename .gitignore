@@ -40,3 +40,10 @@ frontend/.next/
 backend/app/data/
 backend/app/ml/prototypes.json
 
+.env.local
+node_modules/
+.venv/
+*.npz
+*.npy
+demo_assets/
+*.png

@@ -10,6 +10,7 @@ from app.utils.plots import spectrum_plot_base64
 from app.ml.features import extract_raman_features
 from app.ml.prototypes_store import PROTOTYPES
 from app.ml.prototypes import predict_with_prototypes
+from typing import Optional
 
 # ---------------- logging ----------------
 logging.basicConfig(level=logging.INFO)
@@ -20,11 +21,12 @@ app = FastAPI(title="SpectraCloud API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/")
 def health():
@@ -35,7 +37,9 @@ def _ensure_csv(file: UploadFile):
     if not (file.filename or "").lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Spectrum must be a .csv file")
 
-def _ensure_image(file: UploadFile):
+def _ensure_image(file: Optional[UploadFile]):
+    if file is None:
+        return
     if not (file.filename or "").lower().endswith((".png", ".jpg", ".jpeg")):
         raise HTTPException(status_code=400, detail="Image must be PNG/JPG")
 
@@ -43,7 +47,7 @@ def _ensure_image(file: UploadFile):
 @app.post("/analyze")
 async def analyze(
     spectrum: UploadFile = File(...),
-    image: UploadFile = File(...)
+    image: Optional[UploadFile] = File(...)
 ):
     try:
         # ---- validate inputs ----
