@@ -1,1 +1,1 @@
-# Multimodal Raman + PathMNIST
+# Multimodal Raman + PathMnist
