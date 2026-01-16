@@ -4,6 +4,8 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import numpy as np
+import json
+from pathlib import Path
 
 from app.pipeline.raman_preprocess import load_spectrum_csv, preprocess_spectrum
 from app.utils.plots import spectrum_plot_base64
@@ -11,6 +13,8 @@ from app.ml.features import extract_raman_features
 from app.ml.prototypes_store import PROTOTYPES
 from app.ml.prototypes import predict_with_prototypes
 from typing import Optional
+from app.ml.prototypes_store import PROTOTYPES
+from app.ml.prototypes import predict_with_prototypes
 
 # ---------------- logging ----------------
 logging.basicConfig(level=logging.INFO)
@@ -84,6 +88,7 @@ async def analyze(
 
         if PROTOTYPES:
             label, prototype_score, all_scores = predict_with_prototypes(features, PROTOTYPES)
+            logger.info(f"Loaded prototypes in API: {len(PROTOTYPES)}")
 
         # ---- plot ----
         plot_b64 = spectrum_plot_base64(
@@ -116,6 +121,7 @@ async def analyze(
             # prototype-based output
             "feature_dim": int(features.shape[0]),
             "label": label,  # None if prototypes not loaded
+            "label_display": LABEL_MAP.get(str(label), str(label)) if label is not None else None,
             "prototype_score": None if prototype_score is None else round(float(prototype_score), 6),
 
             # debug (remove later if you want)
@@ -134,4 +140,19 @@ async def analyze(
     except Exception as e:
         logger.exception("Unexpected server error")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    LABEL_MAP_PATH = Path(__file__).parent / "ml" / "label_map.json"
+
+LABEL_MAP = {}
+
+def _load_label_map() -> dict:
+    try:
+        label_map_path = Path(__file__).parent / "ml" / "label_map.json"
+        if label_map_path.exists():
+            return json.loads(label_map_path.read_text())
+    except Exception as e:
+        logger.warning(f"label_map.json not loaded: {e}")
+    return {}
+
+LABEL_MAP = _load_label_map()
+
 

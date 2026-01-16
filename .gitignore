@@ -47,3 +47,4 @@ node_modules/
 *.npy
 demo_assets/
 *.png
+*.jpg
