@@ -1,7 +1,7 @@
 # SpectraCloud  
 **Cloud-Compatible Multimodal AI Pipeline for Label-Free Optical Data Analysis**
 
-SpectraCloud is an end-to-end prototype for analyzing **optical spectroscopy data** in a scalable, interpretable, and deployment-ready manner. The system is designed to ingest **Raman spectra (chemical information)** alongside **biomedical images (structural information)** and produce transparent, confidence-aware predictions.
+SpectraCloud is an end-to-end prototype for analyzing **optical spectroscopy data** in a scalable, interpretable, and deployment-ready manner. The system is designed to ingest **Raman spectra (chemical information)** alongside **biomedical images (structural information)** and produce transparent, confidence-aware predictions. 
 
 The project emphasizes **practical data pipelines, interpretability, and robustness**, rather than opaque black-box models.
 
